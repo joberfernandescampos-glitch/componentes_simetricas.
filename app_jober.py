@@ -1,128 +1,124 @@
-import streamlit as st
 import cmath
 import math
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import streamlit as st
 
-# Configuração da página web (Título da aba do navegador)
-st.set_page_config(page_title="COMPONENTES SIMÉTRICAS", layout="wide")
+# Configuração da página Web
+st.set_page_config(page_title="Componentes Simétricas", layout="centered")
+st.title("⚡ JÓBER FERNANDES - COMPONENTES SIMÉTRICAS")
 
-# Título Principal da Página
-st.title("⚡JOBER - COMPONENTES SIMÉTRICAS")
-st.write("Insira os valores das correntes de fase para calcular e plotar as componentes de sequência.")
+# --- ENTRADAS NA BARRA LATERAL ---
+st.sidebar.header("📋 Parâmetros de Entrada")
 
-# Criando colunas para organizar as entradas do operador
-col1, col2, col3 = st.columns(3)
 
-with col1:
-    st.subheader("Fase A")
-    Ia_mod = st.number_input("Ia - Módulo (A)", value=20.0, step=1.0, key="ia_m")
-    Ia_ang = st.number_input("Ia - Ângulo (°)", value=0.0, step=1.0, key="ia_a")
-
-with col2:
-    st.subheader("Fase B")
-    Ib_mod = st.number_input("Ib - Módulo (A)", value=30.0, step=1.0, key="ib_m")
-    Ib_ang = st.number_input("Ib - Ângulo (°)", value=-120.0, step=1.0, key="ib_a")
-
-with col3:
-    st.subheader("Fase C")
-    Ic_mod = st.number_input("Ic - Módulo (A)", value=40.0, step=1.0, key="ic_m")
-    Ic_ang = st.number_input("Ic - Ângulo (°)", value=120.0, step=1.0, key="ic_a")
-
-# Cálculos Matemáticos
-a = cmath.rect(1, math.radians(120))
-a2 = a * a
-
-Ia = cmath.rect(Ia_mod, math.radians(Ia_ang))
-Ib = cmath.rect(Ib_mod, math.radians(Ib_ang))
-Ic = cmath.rect(Ic_mod, math.radians(Ic_ang))
-
-I0 = (Ia + Ib + Ic) / 3
-I1 = (Ia + a * Ib + a2 * Ic) / 3
-I2 = (Ia + a2 * Ib + a * Ic) / 3
-
-def formatar_polar(c):
-    mod, rad = cmath.polar(c)
-    ang = math.degrees(rad)
-    if mod < 1e-4: ang = 0.0
+def entrada_fasor(fase, def_mod, def_ang):
+    st.sidebar.subheader(f"Corrente I{fase}")
+    mod = st.sidebar.number_input(
+        f"Módulo I{fase} (A):", min_value=0.0, value=float(def_mod), step=1.0
+    )
+    ang = st.sidebar.number_input(
+        f"Ângulo I{fase} (°):",
+        min_value=-360.0,
+        max_value=360.0,
+        value=float(def_ang),
+        step=5.0,
+    )
     return mod, ang
 
-I0_mod, I0_ang = formatar_polar(I0)
-I1_mod, I1_ang = formatar_polar(I1)
-I2_mod, I2_ang = formatar_polar(I2)
 
-st.markdown("---")
+mod_a, ang_a = entrada_fasor("a", 210, 0)
+mod_b, ang_b = entrada_fasor("b", 52, 240)
+mod_c, ang_c = entrada_fasor("c", 65, 120)
 
-# Criando colunas para os Resultados e Gráficos
-col_res, col_graf = st.columns(2)
 
-with col_res:
-    st.subheader("📊 Resultados")
-    
-    st.markdown("**Correntes de Fase (Entrada):**")
-    st.code(f"Ia = {Ia_mod:.4f} |_ {Ia_ang:.2f}° A\n"
-            f"Ib = {Ib_mod:.4f} |_ {Ib_ang:.2f}° A\n"
-            f"Ic = {Ic_mod:.4f} |_ {Ic_ang:.2f}° A")
-    
-    st.markdown("**Componentes de Sequência:**")
-    st.code(f"I0 = {I0_mod:.4f} |_ {I0_ang:.2f}° A\n"
-            f"I1 = {I1_mod:.4f} |_ {I1_ang:.2f}° A\n"
-            f"I2 = {I2_mod:.4f} |_ {I2_ang:.2f}° A", language="text")
+def ajustar_angulo(ang):
+    while ang > 180:
+        ang -= 360
+    while ang <= -180:
+        ang += 360
+    return ang
 
-with col_graf:
-    st.subheader("📈 Gráficos dos Fasores")
-    
-    # Gerando a figura polar
-    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={'projection': 'polar'}, figsize=(9, 4.5))
-    
-    # Define o limite máximo do raio dinamicamente com folga
-    max_raio = float(max(Ia_mod, Ib_mod, Ic_mod, 1.0) * 1.1)
-    
-    # --- Gráfico 1: Fases ---
-    ax1.set_ylim(0, max_raio)
-    
-    ax1.annotate('', xy=(math.radians(Ia_ang), Ia_mod), xytext=(0,0), 
-                 xycoords='data', textcoords='data',
-                 arrowprops=dict(arrowstyle="->", color='red', lw=2.5))
-                 
-    ax1.annotate('', xy=(math.radians(Ib_ang), Ib_mod), xytext=(0,0), 
-                 xycoords='data', textcoords='data',
-                 arrowprops=dict(arrowstyle="->", color='green', lw=2.5))
-                 
-    ax1.annotate('', xy=(math.radians(Ic_ang), Ic_mod), xytext=(0,0), 
-                 xycoords='data', textcoords='data',
-                 arrowprops=dict(arrowstyle="->", color='blue', lw=2.5))
-                 
-    ax1.set_title("Fases (Ia, Ib, Ic)", va='bottom', color='darkblue', weight='bold')
-    
-    # Legendas
-    ax1.plot([], [], color='red', label='Ia')
-    ax1.plot([], [], color='green', label='Ib')
-    ax1.plot([], [], color='blue', label='Ic')
-    ax1.legend(loc='lower left', bbox_to_anchor=(-0.2, -0.2), fontsize=9)
 
-    # --- Gráfico 2: Sequências ---
-    ax2.set_ylim(0, max_raio)
-    
-    ax2.annotate('', xy=(math.radians(I0_ang), I0_mod), xytext=(0,0), 
-                 xycoords='data', textcoords='data',
-                 arrowprops=dict(arrowstyle="->", color='orange', lw=2.5))
-                 
-    ax2.annotate('', xy=(math.radians(I1_ang), I1_mod), xytext=(0,0), 
-                 xycoords='data', textcoords='data',
-                 arrowprops=dict(arrowstyle="->", color='purple', lw=2.5))
-                 
-    ax2.annotate('', xy=(math.radians(I2_ang), I2_mod), xytext=(0,0), 
-                 xycoords='data', textcoords='data',
-                 arrowprops=dict(arrowstyle="->", color='brown', lw=2.5))
-                 
-    ax2.set_title("Sequências (I0, I1, I2)", va='bottom', color='darkcyan', weight='bold')
-    
-    # Legendas
-    ax2.plot([], [], color='orange', label='I0 (Zero)')
-    ax2.plot([], [], color='purple', label='I1 (Pos)')
-    ax2.plot([], [], color='brown', label='I2 (Neg)')
-    ax2.legend(loc='lower left', bbox_to_anchor=(-0.2, -0.2), fontsize=9)
+# --- PROCESSAMENTO MATEMÁTICO ---
+Ia = cmath.rect(mod_a, math.radians(ang_a))
+Ib = cmath.rect(mod_b, math.radians(ang_b))
+Ic = cmath.rect(mod_c, math.radians(ang_c))
 
-    plt.tight_layout()
-    st.pyplot(fig)
+# 1. Corrente de Neutro
+In = Ia + Ib + Ic
+mod_In, ang_In = cmath.polar(In)
+
+# Operadores de Deslocamento
+a = cmath.rect(1, math.radians(120))
+a2 = cmath.rect(1, math.radians(240))
+
+# 2. Componentes de Sequência
+I0 = In / 3
+mod_I0, ang_I0 = cmath.polar(I0)
+
+I1 = (Ia + (a * Ib) + (a2 * Ic)) / 3
+mod_I1, ang_I1 = cmath.polar(I1)
+
+I2 = (Ia + (a2 * Ib) + (a * Ic)) / 3
+mod_I2, ang_I2 = cmath.polar(I2)
+
+# --- EXIBIÇÃO DOS RESULTADOS ---
+st.subheader("📊 Resultados Computados")
+
+resultado_texto = (
+    "--- Correntes de Fase (Entrada) ---\n"
+    f"Ia = {mod_a:.4f} |_ {ajustar_angulo(ang_a):.2f}° A\n"
+    f"Ib = {mod_b:.4f} |_ {ajustar_angulo(ang_b):.2f}° A\n"
+    f"Ic = {mod_c:.4f} |_ {ajustar_angulo(ang_c):.2f}° A\n\n"
+    "--- Componentes de Sequência ---\n"
+    f"I0 = {mod_I0:.4f} |_ {ajustar_angulo(math.degrees(ang_I0)):.2f}° A\n"
+    f"I1 = {mod_I1:.4f} |_ {ajustar_angulo(math.degrees(ang_I1)):.2f}° A\n"
+    f"I2 = {mod_I2:.4f} |_ {ajustar_angulo(math.degrees(ang_I2)):.2f}° A\n\n"
+    "--- Corrente de Neutro ---\n"
+    f"In = {mod_In:.4f} |_ {ajustar_angulo(math.degrees(ang_In)):.2f}° A\n"
+)
+
+# Bloco estilo console negro para manter o padrão visual original
+st.text_area(
+    label="Console de Saída:",
+    value=resultado_texto,
+    height=280,
+    disabled=True,
+)
+
+# --- PLOTAGEM DO GRÁFICO FASORIAL WEB ---
+st.subheader("📈 Diagrama Fasorial de Entrada")
+
+
+def plotar_fasor(complexo, label, cor):
+    plt.quiver(
+        0,
+        0,
+        complexo.real,
+        complexo.imag,
+        angles="xy",
+        scale_units="xy",
+        scale=1,
+        color=cor,
+        label=label,
+    )
+
+
+fig, ax = plt.subplots(figsize=(6, 6))
+plotar_fasor(Ia, "Ia", "blue")
+plotar_fasor(Ib, "Ib", "green")
+plotar_fasor(Ic, "Ic", "orange")
+plotar_fasor(In, "In (Neutro)", "red")
+
+# Configurações do gráfico
+lim = max(mod_a, mod_b, mod_c, mod_In, 1) * 1.2
+ax.set_xlim(-lim, lim)
+ax.set_ylim(-lim, lim)
+ax.axhline(0, color="black", linewidth=0.5, linestyle="--")
+ax.axvline(0, color="black", linewidth=0.5, linestyle="--")
+ax.grid(True, which="both", linestyle=":", alpha=0.5)
+ax.set_aspect("equal")
+ax.legend()
+
+# Exibe o gráfico de forma nativa e correta no ambiente web do Streamlit
+st.pyplot(fig)
