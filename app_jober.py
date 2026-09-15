@@ -78,7 +78,7 @@ resultado_texto = (
     f"In = {mod_In:.4f} |_ {ajustar_angulo(math.degrees(ang_In)):.2f}° A\n"
 )
 
-# Bloco estilo console negro para manter o padrão visual original
+# Bloco estilo console negro original
 st.text_area(
     label="Console de Saída:",
     value=resultado_texto,
@@ -86,12 +86,15 @@ st.text_area(
     disabled=True,
 )
 
-# --- PLOTAGEM DO GRÁFICO FASORIAL WEB ---
-st.subheader("📈 Diagrama Fasorial de Entrada")
+# --- PLOTAGEM DOS DOIS GRÁFICOS FASORIAIS ---
+st.subheader("📈 Diagramas Fasoriais")
+
+# Criando duas colunas no Streamlit para os gráficos ficarem lado a lado na Web
+col1, col2 = st.columns(2)
 
 
-def plotar_fasor(complexo, label, cor):
-    plt.quiver(
+def plotar_fasor(ax, complexo, label, cor):
+    ax.quiver(
         0,
         0,
         complexo.real,
@@ -101,24 +104,45 @@ def plotar_fasor(complexo, label, cor):
         scale=1,
         color=cor,
         label=label,
+        width=0.015,
     )
 
 
-fig, ax = plt.subplots(figsize=(6, 6))
-plotar_fasor(Ia, "Ia", "blue")
-plotar_fasor(Ib, "Ib", "green")
-plotar_fasor(Ic, "Ic", "orange")
-plotar_fasor(In, "In (Neutro)", "red")
+# Encontrando um limite de escala comum para os dois gráficos ficarem proporcionais
+maior_modulo = max(mod_a, mod_b, mod_c, mod_In, mod_I0, mod_I1, mod_I2, 1)
+limite_grafico = maior_modulo * 1.2
 
-# Configurações do gráfico
-lim = max(mod_a, mod_b, mod_c, mod_In, 1) * 1.2
-ax.set_xlim(-lim, lim)
-ax.set_ylim(-lim, lim)
-ax.axhline(0, color="black", linewidth=0.5, linestyle="--")
-ax.axvline(0, color="black", linewidth=0.5, linestyle="--")
-ax.grid(True, which="both", linestyle=":", alpha=0.5)
-ax.set_aspect("equal")
-ax.legend()
+# --- GRÁFICO 1: CORRENTES DE FASE (Coluna 1) ---
+with col1:
+    st.write("**Correntes de Fase e Neutro**")
+    fig1, ax1 = plt.subplots(figsize=(5, 5))
+    plotar_fasor(ax1, Ia, "Ia", "blue")
+    plotar_fasor(ax1, Ib, "Ib", "green")
+    plotar_fasor(ax1, Ic, "Ic", "orange")
+    plotar_fasor(ax1, In, "In", "red")
 
-# Exibe o gráfico de forma nativa e correta no ambiente web do Streamlit
-st.pyplot(fig)
+    ax1.set_xlim(-limite_grafico, limite_grafico)
+    ax1.set_ylim(-limite_grafico, limite_grafico)
+    ax1.axhline(0, color="black", linewidth=0.5, linestyle="--")
+    ax1.axvline(0, color="black", linewidth=0.5, linestyle="--")
+    ax1.grid(True, which="both", linestyle=":", alpha=0.5)
+    ax1.set_aspect("equal")
+    ax1.legend(loc="upper right")
+    st.pyplot(fig1)
+
+# --- GRÁFICO 2: COMPONENTES DE SEQUÊNCIA (Coluna 2) ---
+with col2:
+    st.write("**Componentes de Sequência**")
+    fig2, ax2 = plt.subplots(figsize=(5, 5))
+    plotar_fasor(ax2, I0, "I0 (Zero)", "purple")
+    plotar_fasor(ax2, I1, "I1 (Pos)", "brown")
+    plotar_fasor(ax2, I2, "I2 (Neg)", "magenta")
+
+    ax2.set_xlim(-limite_grafico, limite_grafico)
+    ax2.set_ylim(-limite_grafico, limite_grafico)
+    ax2.axhline(0, color="black", linewidth=0.5, linestyle="--")
+    ax2.axvline(0, color="black", linewidth=0.5, linestyle="--")
+    ax2.grid(True, which="both", linestyle=":", alpha=0.5)
+    ax2.set_aspect("equal")
+    ax2.legend(loc="upper right")
+    st.pyplot(fig2)
